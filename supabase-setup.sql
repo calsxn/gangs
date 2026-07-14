@@ -33,6 +33,7 @@ create table roster (
   status text,
   joined date,
   notes text,
+  added_by uuid references profiles(id) on delete set null default auth.uid(),
   created_at timestamptz default now()
 );
 
