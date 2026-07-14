@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>City Gang Registry</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* ============================================================
+   FILL THESE IN before you deploy — see Project Settings > API
+   in your Supabase dashboard.
+   ============================================================ */
+</style>
+</head>
+<body>
+<div id="gr-root"></div>
+<style>
+html, body { margin:0; padding:0; background:#0B0D12; }
+#gr-root, #gr-root * { box-sizing: border-box; }
+#gr-root {
+  --bg:#0B0D12; --panel:#12151C; --panel-alt:#171B23; --panel-hi:#1E232D;
+  --sidebar:#0D0F15;
+  --border:#242833; --border-soft:#1B1F28;
+  --text:#EDEFF3; --text-dim:#9BA2B4; --text-faint:#5C6479;
+  --accent:#3B82F6; --accent-soft:#5B9DF9; --accent2:#4FD6C4;
+  --warn:#F5A524; --danger:#FF5C5C; --success:#52D17C;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.3);
+  --shadow-md:0 8px 24px -6px rgba(0,0,0,.5);
+  --shadow-lg:0 24px 60px -14px rgba(0,0,0,.6);
+  --r-sm:6px; --r-md:8px; --r-lg:12px;
+  font-family:'Inter',sans-serif;
+  background:var(--bg); color:var(--text);
+  min-height:100vh;
+  display:flex; flex-direction:column;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+#gr-root ::selection { background:rgba(59,130,246,.3); color:#fff; }
+#gr-root *:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+#gr-root ::-webkit-scrollbar { width:10px; height:10px; }
+#gr-root ::-webkit-scrollbar-track { background:transparent; }
+#gr-root ::-webkit-scrollbar-thumb { background:var(--panel-hi); border-radius:8px; border:2px solid var(--bg); }
+#gr-root .mono { font-family:'JetBrains Mono',monospace; }
+#gr-root .eyebrow { font-size:10.5px; text-transform:uppercase; letter-spacing:.6px; color:var(--text-faint); font-weight:700; }
+#gr-root button { font-family:'Inter',sans-serif; cursor:pointer; }
+#gr-root input, #gr-root select, #gr-root textarea {
+  font-family:'Inter',sans-serif; background:var(--panel-alt); color:var(--text);
+  border:1px solid var(--border); border-radius:var(--r-sm); padding:10px 12px; font-size:13.5px; width:100%;
+  transition:border-color .15s ease, box-shadow .15s ease;
+}
+#gr-root input:focus, #gr-root select:focus, #gr-root textarea:focus {
+  outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(59,130,246,.16);
+}
+#gr-root ::placeholder { color:var(--text-faint); }
+#gr-root .btn {
+  border:1px solid var(--border); background:var(--panel-alt); color:var(--text);
+  border-radius:var(--r-sm); padding:9px 16px; font-size:13px; font-weight:600;
+  transition:background .15s ease, border-color .15s ease, transform .1s ease, box-shadow .15s ease;
+  box-shadow:var(--shadow-sm);
+}
+#gr-root .btn:hover { background:var(--panel-hi); border-color:var(--text-faint); transform:translateY(-1px); }
+#gr-root .btn:active { transform:translateY(0); }
+#gr-root .btn-accent { background:var(--accent); border-color:var(--accent); color:#fff; box-shadow:0 6px 16px -6px rgba(59,130,246,.55); }
+#gr-root .btn-accent:hover { background:var(--accent-soft); border-color:var(--accent-soft); }
+#gr-root .btn-ghost { background:transparent; border-color:transparent; box-shadow:none; }
+#gr-root .btn-ghost:hover { background:var(--panel-alt); transform:none; }
+#gr-root .btn-danger { background:transparent; border-color:var(--danger); color:var(--danger); box-shadow:none; }
+#gr-root .btn-danger:hover { background:rgba(255,92,92,.1); }
+#gr-root .btn-sm { padding:6px 11px; font-size:12px; }
+#gr-root .fade-in { animation:gr-fade .2s ease; }
+@keyframes gr-fade { from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);} }
+#gr-root .badge {
+  display:inline-flex; align-items:center; gap:5px; font-family:'JetBrains Mono',monospace;
+  font-size:11px; font-weight:700; padding:3px 9px; border-radius:20px; letter-spacing:0.3px;
+}
+#gr-root .dot { width:6px; height:6px; border-radius:50%; display:inline-block; }
+#gr-root .modal-wrap {
+  position:fixed; inset:0; background:rgba(4,5,8,.75); backdrop-filter:blur(3px); display:flex;
+  align-items:center; justify-content:center; z-index:50; padding:20px;
+}
+#gr-root .modal {
+  background:var(--panel); border:1px solid var(--border); border-radius:var(--r-lg);
+  padding:24px; width:100%; max-width:440px; max-height:85vh; overflow:auto;
+  box-shadow:var(--shadow-lg);
+}
+#gr-root .field-label { font-size:11.5px; color:var(--text-dim); margin-bottom:6px; display:block; font-weight:600; letter-spacing:0.2px; }
+#gr-root .field { margin-bottom:14px; }
+#gr-root .card {
+  background:var(--panel); border:1px solid var(--border); border-radius:var(--r-md);
+  box-shadow:var(--shadow-sm); transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease, background .15s ease;
+}
+#gr-root .card-hover:hover { transform:translateY(-2px); box-shadow:var(--shadow-md); border-color:var(--text-faint); background:var(--panel-alt); }
+#gr-root table { width:100%; border-collapse:collapse; }
+#gr-root th { text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-faint); font-weight:700; padding:0 12px 10px; }
+#gr-root td { padding:12px; font-size:13.5px; border-top:1px solid var(--border-soft); }
+#gr-root tr:hover td { background:var(--panel-alt); }
+#gr-root .nav-item {
+  display:flex; align-items:center; width:100%; text-align:left; background:transparent; border:1px solid transparent;
+  color:var(--text-dim); font-size:13.5px; font-weight:500; padding:9px 11px; border-radius:var(--r-sm); margin-bottom:2px;
+  transition:background .15s ease, color .15s ease, border-color .15s ease;
+}
+#gr-root .nav-item:hover { background:var(--panel-alt); color:var(--text); }
+#gr-root .nav-item-active { background:rgba(59,130,246,.14); border-color:rgba(59,130,246,.35); color:#8FBBFB; font-weight:600; }
+#gr-root .stat-tile {
+  background:var(--panel); border:1px solid var(--border); border-radius:var(--r-md);
+  padding:14px 16px; box-shadow:var(--shadow-sm);
+}
+#gr-root .stat-num { font-size:22px; font-weight:700; line-height:1.1; margin-bottom:4px; }
+#gr-root .banner { border-radius:var(--r-md); border:1px solid; padding:13px 15px; font-size:12.5px; line-height:1.6; }
+#gr-root .banner-warn { background:rgba(245,165,36,.08); border-color:rgba(245,165,36,.35); color:#F5A524; }
+#gr-root .banner-success { background:rgba(82,209,124,.08); border-color:rgba(82,209,124,.35); color:var(--success); }
+</style>
+<script>
+(function(){
+
+/* ============================================================
+   1) PASTE YOUR SUPABASE PROJECT URL AND ANON KEY BELOW
+   Find them in Supabase: Project Settings > API
+   ============================================================ */
+var SUPABASE_URL = 'https://hmekrgcxroysxlxgnvns.supabase.co';
+var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhtZWtyZ2N4cm95c3hseGdudm5zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQwMjg0NjAsImV4cCI6MjA5OTYwNDQ2MH0.Jc0BCxO7JDw1Off46TAanAbLCD_QyLyY9KAZUxrgO5o';
+var EMAIL_DOMAIN = 'gangregistry-app.com'; // used to turn usernames into login emails behind the scenes
+
+var NEEDS_SETUP = !/^https:\/\/.+\.supabase\.co\/?$/.test(SUPABASE_URL) || !SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.indexOf('YOUR_') === 0;
+var sb = null, sbAdmin = null, SETUP_ERROR = '';
+if (!NEEDS_SETUP) {
+  try {
+    sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // Separate client with no persisted session, used only for admin-created
+    // logins so creating someone else's account never swaps out the admin's
+    // own session in this tab.
+    sbAdmin = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
+  } catch (e) {
+    NEEDS_SETUP = true;
+    SETUP_ERROR = e && e.message ? e.message : String(e);
+  }
+}
+
+var RANKS = ['Leader','Underboss','Lieutenant','Enforcer','Member','Prospect'];
+var STATUSES = ['Active','Inactive','Incarcerated'];
+
+var S = { booted:false, gangs:[], user:null, view: NEEDS_SETUP ? 'setup' : 'auth', authTab:'login', activeGang:null, modal:null, error:'', notice:'', gangQuery:'', rosterQuery:'', _focusId:null, _focusPos:null };
+var root = document.getElementById('gr-root');
+
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
+function findGang(id){ for (var i=0;i<S.gangs.length;i++) if (S.gangs[i].id===id) return S.gangs[i]; return null; }
+
+async function loadGangs(){
+  var res = await sb.from('gangs').select('*').order('name');
+  return res.data || [];
+}
+async function loadRoster(gangId){
+  var res = await sb.from('roster').select('*').eq('gang_id', gangId).order('name');
+  return res.data || [];
+}
+async function loadProfile(id){
+  var res = await sb.from('profiles').select('*').eq('id', id).single();
+  return res.data || null;
+}
+async function loadAllProfiles(){
+  var res = await sb.from('profiles').select('*').order('username');
+  return res.data || [];
+}
+
+async function boot(){
+  if (NEEDS_SETUP) { S.booted = true; render(); return; }
+  S.gangs = await loadGangs();
+  var sess = await sb.auth.getSession();
+  var user = sess && sess.data && sess.data.session ? sess.data.session.user : null;
+  if (user) {
+    var prof = await loadProfile(user.id);
+    if (prof) { S.user = prof; S.view = 'registry'; }
+  }
+  S.booted = true;
+  render();
+  focusFirstField();
+}
+
+async function doLogin(username, password){
+  S.error = '';
+  username = (username||'').trim().toLowerCase();
+  if (!username || !password) { S.error = 'Enter a username and password.'; render(); return; }
+  var lookup = await sb.from('profiles').select('login_email').eq('username', username).single();
+  if (!lookup.data) { S.error = 'No account with that username.'; render(); return; }
+  var res = await sb.auth.signInWithPassword({ email: lookup.data.login_email, password: password });
+  if (res.error) { S.error = 'Wrong password.'; render(); return; }
+  S.user = await loadProfile(res.data.user.id);
+  S.view = 'registry';
+  render();
+}
+
+async function doRegister(username, password, displayName, gangId){
+  S.error = '';
+  username = (username||'').trim().toLowerCase();
+  if (!/^[a-z0-9_]{3,20}$/.test(username)) { S.error = 'Username must be 3-20 characters, letters/numbers/underscore only.'; render(); return; }
+  if (!password || password.length < 6) { S.error = 'Password must be at least 6 characters.'; render(); return; }
+  if (!displayName) { S.error = 'Enter a display name.'; render(); return; }
+  if (!gangId) { S.error = 'Pick a gang to join.'; render(); return; }
+  var email = username + '@' + EMAIL_DOMAIN;
+  var res = await sb.auth.signUp({ email: email, password: password });
+  if (res.error) { S.error = res.error.message; render(); return; }
+  if (!res.data.session) { S.error = 'Sign-up did not return a session. In Supabase, make sure "Confirm email" is turned off under Authentication settings.'; render(); return; }
+  var pres = await sb.from('profiles').insert({ id: res.data.user.id, username: username, login_email: email, display_name: displayName, gang_id: gangId, is_admin: false });
+  if (pres.error) { S.error = 'Account created but profile setup failed: ' + pres.error.message; render(); return; }
+  S.user = await loadProfile(res.data.user.id);
+  S.view = 'registry';
+  render();
+}
+
+async function doLogout(){
+  await sb.auth.signOut();
+  S.user = null; S.view = 'auth'; S.authTab = 'login'; S.activeGang = null;
+  render();
+}
+
+function canEditGang(gangId){
+  if (!S.user) return false;
+  if (S.user.is_admin) return true;
+  return S.user.gang_id === gangId;
+}
+
+function openGang(gangId){ S.activeGang = gangId; S.rosterQuery = ''; S.view = 'gang'; render(); }
+function backToRegistry(){ S.activeGang = null; S.view = 'registry'; render(); }
+function goAdmin(){ S.view = 'admin'; render(); }
+function closeModal(){ S.modal = null; S.error=''; render(); }
+
+function focusFirstField(){
+  var scope = document.querySelector('#gr-root .modal') || root;
+  var field = scope.querySelector('form input, form select, form textarea');
+  if (field) field.focus();
+}
+
+function openMemberModal(gangId, member){
+  S.error='';
+  S.modal = { type:'member', gangId: gangId, isNew: !member, member: member ? Object.assign({}, member) : { id:null, name:'', alias:'', rank:'Member', discord:'', status:'Active', joined:new Date().toISOString().slice(0,10), notes:'' } };
+  render();
+  focusFirstField();
+}
+
+async function saveMemberModal(){
+  var m = S.modal.member;
+  if (!m.name.trim()) { S.error = 'Member name is required.'; render(); return; }
+  var payload = { gang_id: S.modal.gangId, name: m.name, alias: m.alias, rank: m.rank, discord: m.discord, status: m.status, joined: m.joined || null, notes: m.notes };
+  var res;
+  if (S.modal.isNew) res = await sb.from('roster').insert(payload);
+  else res = await sb.from('roster').update(payload).eq('id', m.id);
+  if (res.error) { S.error = res.error.message; render(); return; }
+  S.error = ''; S.modal = null; render();
+}
+
+async function deleteMember(gangId, memberId){
+  if (!confirm('Remove this member from the roster?')) return;
+  var res = await sb.from('roster').delete().eq('id', memberId);
+  if (res.error) { alert(res.error.message); return; }
+  render();
+}
+
+function openGangEditModal(gang){
+  S.error='';
+  S.modal = { type:'gang', gang: gang ? Object.assign({}, gang) : { id:'', name:'', tag:'', turf:'', color:'#FFB020', motto:'', founded: String(new Date().getFullYear()) }, isNew: !gang };
+  render();
+  focusFirstField();
+}
+
+async function saveGangModal(){
+  var g = S.modal.gang;
+  if (!g.name.trim() || !g.tag.trim()) { S.error = 'Gang name and tag are required.'; render(); return; }
+  if (S.modal.isNew) g.id = g.name.trim().toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'') + '-' + uid().slice(0,4);
+  var res;
+  if (S.modal.isNew) res = await sb.from('gangs').insert(g);
+  else res = await sb.from('gangs').update(g).eq('id', g.id);
+  if (res.error) { S.error = res.error.message; render(); return; }
+  S.gangs = await loadGangs();
+  S.error = ''; S.modal = null; render();
+}
+
+async function deleteGang(gangId){
+  if (!confirm('Delete this gang and its entire roster? This cannot be undone.')) return;
+  var res = await sb.from('gangs').delete().eq('id', gangId);
+  if (res.error) { alert(res.error.message); return; }
+  S.gangs = await loadGangs();
+  render();
+}
+
+function openCreateUserModal(){
+  S.error='';
+  S.modal = { type:'createUser', username:'', password:'', displayName:'', gangId: S.gangs[0] ? S.gangs[0].id : '', isAdmin:false };
+  render();
+  focusFirstField();
+}
+
+async function submitCreateUser(){
+  var m = S.modal;
+  var username = (m.username||'').trim().toLowerCase();
+  if (!/^[a-z0-9_]{3,20}$/.test(username)) { S.error = 'Username must be 3-20 characters, letters/numbers/underscore only.'; render(); return; }
+  if (!m.password || m.password.length < 6) { S.error = 'Password must be at least 6 characters.'; render(); return; }
+  var email = username + '@' + EMAIL_DOMAIN;
+  var res = await sbAdmin.auth.signUp({ email: email, password: m.password });
+  if (res.error) { S.error = res.error.message; render(); return; }
+  var newId = res.data.user ? res.data.user.id : null;
+  if (!newId) { S.error = 'Could not create the login (Supabase did not return a user).'; render(); return; }
+  var pres = await sbAdmin.from('profiles').insert({ id: newId, username: username, login_email: email, display_name: m.displayName || username, gang_id: m.isAdmin ? null : m.gangId, is_admin: !!m.isAdmin });
+  if (pres.error) { S.error = 'Login created but profile setup failed: ' + pres.error.message; render(); return; }
+  await sbAdmin.auth.signOut();
+  S.error = '';
+  S.notice = 'Account created for "' + username + '". Share the username and password with them directly.';
+  S.modal = null;
+  S.gangs = await loadGangs();
+  render();
+}
+
+async function reassignUserGang(profileId, gangId){
+  await sb.from('profiles').update({ gang_id: gangId }).eq('id', profileId);
+}
+
+async function toggleAdmin(profileId, val){
+  var patch = { is_admin: val };
+  if (val) patch.gang_id = null;
+  await sb.from('profiles').update(patch).eq('id', profileId);
+  render();
+}
+
+async function removeFromRegistry(profileId, username){
+  if (!confirm('Remove "' + username + '" from the registry? Their login will still exist in Supabase Auth unless you delete it there too (Authentication > Users).')) return;
+  await sb.from('profiles').delete().eq('id', profileId);
+  render();
+}
+
+function openChangePasswordModal(){
+  S.error='';
+  S.modal = { type:'changePassword', next:'' };
+  render();
+  focusFirstField();
+}
+async function submitChangePassword(){
+  var m = S.modal;
+  if (!m.next || m.next.length < 6) { S.error = 'New password must be at least 6 characters.'; render(); return; }
+  var res = await sb.auth.updateUser({ password: m.next });
+  if (res.error) { S.error = res.error.message; render(); return; }
+  S.error = ''; S.notice = 'Password updated.'; S.modal = null; render();
+}
+
+function fmtDate(d){ if(!d) return '—'; return d; }
+function rankColor(rank){
+  if (rank==='Leader') return 'var(--accent)';
+  if (rank==='Underboss') return 'var(--accent2)';
+  if (rank==='Lieutenant') return '#B06CFF';
+  if (rank==='Enforcer') return '#FF8A3D';
+  if (rank==='Prospect') return 'var(--text-faint)';
+  return 'var(--text-dim)';
+}
+function statusColor(st){
+  if (st==='Active') return 'var(--success)';
+  if (st==='Incarcerated') return 'var(--danger)';
+  return 'var(--text-faint)';
+}
+
+function navItem(label, active, handler){
+  return '<button class="nav-item'+(active?' nav-item-active':'')+'" onclick="'+handler+'">'+esc(label)+'</button>';
+}
+
+function shell(activeNav, pageTitle, pageSub, showBack, contentHtml){
+  var h = '<div style="flex:1;display:flex;min-height:100vh;">';
+  h += '<div style="width:216px;flex-shrink:0;background:var(--sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:18px 12px;position:sticky;top:0;align-self:flex-start;height:100vh;">';
+  h += '<div style="display:flex;align-items:center;gap:9px;padding:2px 8px 20px;">';
+  h += '<div style="width:22px;height:22px;border-radius:6px;background:var(--accent);flex-shrink:0;"></div>';
+  h += '<div style="font-weight:700;font-size:13.5px;line-height:1.25;">City Gang Registry</div>';
+  h += '</div>';
+  h += navItem('Registry', activeNav==='registry', 'grBack()');
+  if (S.user.is_admin) h += navItem('Admin panel', activeNav==='admin', 'grAdmin()');
+  h += '<div style="flex:1;"></div>';
+  h += '<div style="border-top:1px solid var(--border-soft);padding:14px 8px 4px;">';
+  h += '<div style="font-size:13px;font-weight:600;">'+esc(S.user.display_name)+'</div>';
+  h += '<div class="mono" style="font-size:11px;color:var(--text-faint);margin-top:2px;margin-bottom:12px;">@'+esc(S.user.username)+(S.user.is_admin?' &middot; admin':'')+'</div>';
+  h += '<div style="display:flex;gap:6px;">';
+  h += '<button class="btn btn-sm" style="flex:1;" onclick="grChangePw()">Password</button>';
+  h += '<button class="btn btn-sm btn-danger" onclick="grLogout()">Log out</button>';
+  h += '</div></div>';
+  h += '</div>';
+
+  h += '<div style="flex:1;min-width:0;display:flex;flex-direction:column;">';
+  h += '<div style="padding:20px 32px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;flex-wrap:wrap;flex-shrink:0;">';
+  if (showBack) h += '<button class="btn btn-ghost btn-sm" onclick="grBack()">&larr;</button>';
+  h += '<div><div style="font-size:18px;font-weight:700;">'+esc(pageTitle)+'</div>';
+  if (pageSub) h += '<div style="font-size:12px;color:var(--text-faint);margin-top:2px;">'+esc(pageSub)+'</div>';
+  h += '</div></div>';
+  h += '<div style="flex:1;padding:28px 32px;">'+contentHtml+'</div>';
+  h += '</div>';
+
+  h += '</div>';
+  return h;
+}
+
+function emptyState(title, desc, actionHtml){
+  var h = '<div style="text-align:center;padding:64px 20px;">';
+  h += '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="var(--text-faint)" stroke-width="1.6" style="margin-bottom:14px;"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.2" y2="16.2"/></svg>';
+  h += '<div style="font-size:14.5px;font-weight:600;color:var(--text-dim);">'+esc(title)+'</div>';
+  if (desc) h += '<div style="font-size:12.5px;color:var(--text-faint);margin-top:6px;max-width:340px;margin-left:auto;margin-right:auto;">'+esc(desc)+'</div>';
+  if (actionHtml) h += '<div style="margin-top:16px;">'+actionHtml+'</div>';
+  h += '</div>';
+  return h;
+}
+
+function statTile(id, num, label){
+  return '<div class="stat-tile"><div class="stat-num" id="'+id+'">'+esc(num)+'</div><div class="eyebrow">'+esc(label)+'</div></div>';
+}
+
+function renderSetup(){
+  var h = '<div style="flex:1;display:flex;align-items:center;justify-content:center;padding:32px;min-height:100vh;">';
+  h += '<div style="width:100%;max-width:560px;" class="fade-in">';
+  h += '<div style="text-align:center;margin-bottom:22px;">';
+  h += '<div class="eyebrow" style="color:var(--danger);margin-bottom:8px;">Setup required</div>';
+  h += '<div style="font-size:22px;font-weight:700;">Connect Supabase to go live</div>';
+  h += '<div style="font-size:12.5px;color:var(--text-faint);margin-top:6px;">Logins can&rsquo;t work yet &mdash; this page isn&rsquo;t pointed at a database.</div>';
+  h += '</div>';
+  h += '<div class="card" style="padding:24px;font-size:13.5px;line-height:1.7;box-shadow:var(--shadow-md);">';
+  if (SETUP_ERROR) h += '<div style="color:var(--danger);font-size:12.5px;margin-bottom:14px;">Client error: '+esc(SETUP_ERROR)+'</div>';
+  h += '<ol style="margin:0 0 0 18px;padding:0;">';
+  h += '<li style="margin-bottom:10px;">Create a free project at <span class="mono">supabase.com</span> (or use an existing one).</li>';
+  h += '<li style="margin-bottom:10px;">Open <span class="mono">SQL Editor &rsaquo; New query</span>, paste the contents of <span class="mono">supabase-setup.sql</span> from this project folder, and run it once.</li>';
+  h += '<li style="margin-bottom:10px;">In <span class="mono">Authentication &rsaquo; Providers &rsaquo; Email</span>, turn <b>off</b> &ldquo;Confirm email&rdquo; (usernames are turned into fake emails behind the scenes, so there is no inbox to confirm).</li>';
+  h += '<li style="margin-bottom:10px;">In <span class="mono">Project Settings &rsaquo; API</span>, copy the <b>Project URL</b> and the <b>anon public</b> key.</li>';
+  h += '<li>Paste them into the top of <span class="mono">gang-registry-hosted.html</span>, into <span class="mono">SUPABASE_URL</span> and <span class="mono">SUPABASE_ANON_KEY</span>, then reload this page.</li>';
+  h += '</ol></div></div></div>';
+  return h;
+}
+
+function renderAuth(){
+  var h = '<div style="flex:1;display:flex;align-items:center;justify-content:center;padding:32px;min-height:100vh;">';
+  h += '<div style="width:100%;max-width:400px;" class="fade-in">';
+  h += '<div style="text-align:center;margin-bottom:22px;">';
+  h += '<div style="width:38px;height:38px;border-radius:10px;background:var(--accent);margin:0 auto 14px;"></div>';
+  h += '<div style="font-size:21px;font-weight:700;">City Gang Registry</div>';
+  h += '<div style="font-size:12.5px;color:var(--text-faint);margin-top:6px;">Sign in to view and manage gang rosters.</div>';
+  h += '</div>';
+  h += '<div style="display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:18px;">';
+  h += '<button class="btn-ghost" style="flex:1;border-radius:0;padding:10px;font-size:13px;font-weight:600;background:'+(S.authTab==='login'?'var(--panel-alt)':'transparent')+';color:'+(S.authTab==='login'?'var(--text)':'var(--text-faint)')+';" onclick="grSetTab(\'login\')">Log in</button>';
+  h += '<button class="btn-ghost" style="flex:1;border-radius:0;padding:10px;font-size:13px;font-weight:600;background:'+(S.authTab==='register'?'var(--panel-alt)':'transparent')+';color:'+(S.authTab==='register'?'var(--text)':'var(--text-faint)')+';" onclick="grSetTab(\'register\')">Create account</button>';
+  h += '</div>';
+  h += '<div class="card" style="padding:24px;box-shadow:var(--shadow-md);">';
+  if (S.authTab==='login') {
+    h += '<form onsubmit="grDoLogin(event); return false;">';
+    h += '<div class="field"><span class="field-label">Username</span><input id="gr-li-user" placeholder="e.g. red_talon_jay" autofocus /></div>';
+    h += '<div class="field"><span class="field-label">Password</span><input id="gr-li-pass" type="password" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" /></div>';
+    if (S.error) h += '<div style="color:var(--danger);font-size:12.5px;margin-bottom:12px;">'+esc(S.error)+'</div>';
+    h += '<button type="submit" class="btn btn-accent" style="width:100%;">Log in</button>';
+    h += '</form>';
+  } else {
+    h += '<form onsubmit="grDoRegister(event); return false;">';
+    h += '<div class="field"><span class="field-label">Display name</span><input id="gr-re-dname" placeholder="Jay Ramirez" autofocus /></div>';
+    h += '<div class="field"><span class="field-label">Username</span><input id="gr-re-user" placeholder="letters, numbers, underscore" /></div>';
+    h += '<div class="field"><span class="field-label">Password</span><input id="gr-re-pass" type="password" placeholder="min 6 characters" /></div>';
+    h += '<div class="field"><span class="field-label">Join gang</span><select id="gr-re-gang">';
+    S.gangs.forEach(function(g){ h += '<option value="'+g.id+'">'+esc(g.name)+'</option>'; });
+    h += '</select></div>';
+    if (S.error) h += '<div style="color:var(--danger);font-size:12.5px;margin-bottom:12px;">'+esc(S.error)+'</div>';
+    h += '<button type="submit" class="btn btn-accent" style="width:100%;">Create account</button>';
+    h += '</form>';
+  }
+  h += '</div></div></div>';
+  return h;
+}
+
+function renderRegistry(){
+  var q = (S.gangQuery||'').trim().toLowerCase();
+  var list = !q ? S.gangs : S.gangs.filter(function(g){
+    return g.name.toLowerCase().indexOf(q)>-1 || g.tag.toLowerCase().indexOf(q)>-1 || (g.turf||'').toLowerCase().indexOf(q)>-1;
+  });
+  var content = '<div style="max-width:420px;margin-bottom:22px;position:relative;">';
+  content += '<input id="gr-gang-search" placeholder="Search gangs by name, tag, or turf" value="'+esc(S.gangQuery||'')+'" oninput="grFilterGangs(this.value)" style="padding-right:32px;" />';
+  if (q) content += '<button type="button" class="btn-ghost" onclick="grFilterGangsClear()" title="Clear search" style="position:absolute;right:4px;top:4px;width:26px;height:26px;padding:0;border-radius:6px;color:var(--text-faint);font-size:15px;line-height:1;">&times;</button>';
+  content += '</div>';
+  if (list.length === 0) {
+    content += emptyState('No gangs match your search', '');
+  } else {
+    content += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;">';
+    list.forEach(function(g){
+      content += '<div class="card card-hover" style="border-left:3px solid '+g.color+';padding:16px;cursor:pointer;" onclick="grOpenGang(\''+g.id+'\')">';
+      content += '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;">';
+      content += '<div style="font-weight:700;font-size:15px;">'+esc(g.name)+'</div>';
+      content += '<span class="badge" style="background:'+g.color+'22;color:'+g.color+';border:1px solid '+g.color+'55;">'+esc(g.tag)+'</span>';
+      content += '</div>';
+      content += '<div style="font-size:12.5px;color:var(--text-faint);">'+esc(g.turf)+' &middot; est. '+esc(g.founded)+'</div>';
+      content += '</div>';
+    });
+    content += '</div>';
+  }
+  return shell('registry', 'City Gang Registry', S.gangs.length+' gangs on file', false, content);
+}
+
+function renderGang(cb){
+  var g = findGang(S.activeGang);
+  if (!g) { S.view='registry'; render(); return; }
+  var editable = canEditGang(g.id);
+  var head = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:12px;">';
+  head += '<div style="display:flex;align-items:center;gap:12px;">';
+  head += '<span class="badge" style="background:'+g.color+'22;color:'+g.color+';border:1px solid '+g.color+'55;">'+esc(g.tag)+'</span>';
+  head += '<span style="font-size:13px;color:var(--text-faint);">'+esc(g.motto)+'</span>';
+  head += '</div><div style="display:flex;gap:8px;">';
+  if (S.user.is_admin) head += '<button class="btn btn-sm" onclick="grEditGang(\''+g.id+'\')">Edit gang info</button>';
+  if (editable) head += '<button class="btn btn-accent btn-sm" onclick="grAddMember(\''+g.id+'\')">+ Add member</button>';
+  head += '</div></div>';
+
+  if (!editable) {
+    var content = head + emptyState('Roster restricted', 'You can only view the roster for your own gang. Ask an admin if you need access to this one.');
+    cb(shell('registry', g.name, g.turf+' · est. '+g.founded, true, content));
+    return;
+  }
+
+  loadRoster(g.id).then(function(roster){
+    var content = head;
+    if (roster.length === 0) {
+      content += emptyState('No members on file', 'Add your first roster entry to get started.', '<button class="btn btn-accent btn-sm" onclick="grAddMember(\''+g.id+'\')">Add the first member</button>');
+    } else {
+      var rq = (S.rosterQuery||'').trim().toLowerCase();
+      var visible = !rq ? roster : roster.filter(function(m){
+        return m.name.toLowerCase().indexOf(rq)>-1 || (m.alias||'').toLowerCase().indexOf(rq)>-1 || (m.rank||'').toLowerCase().indexOf(rq)>-1 || (m.discord||'').toLowerCase().indexOf(rq)>-1;
+      });
+      if (roster.length > 5) {
+        content += '<div style="max-width:340px;margin-bottom:14px;position:relative;">';
+        content += '<input id="gr-roster-search" placeholder="Search this roster" value="'+esc(S.rosterQuery||'')+'" oninput="grFilterRoster(this.value)" style="padding-right:32px;" />';
+        if (rq) content += '<button type="button" class="btn-ghost" onclick="grFilterRosterClear()" title="Clear search" style="position:absolute;right:4px;top:4px;width:26px;height:26px;padding:0;border-radius:6px;color:var(--text-faint);font-size:15px;line-height:1;">&times;</button>';
+        content += '</div>';
+      }
+      if (visible.length === 0) {
+        content += emptyState('No members match your search', '');
+      } else {
+        content += '<div class="card" style="padding:6px 8px;overflow-x:auto;"><table><thead><tr><th style="padding-top:10px;">Name</th><th>Alias</th><th>Rank</th><th>Discord</th><th>Status</th><th>Joined</th><th></th></tr></thead><tbody>';
+        visible.forEach(function(m){
+          content += '<tr><td style="font-weight:600;">'+esc(m.name)+'</td>';
+          content += '<td class="mono" style="color:var(--text-dim);">'+esc(m.alias||'—')+'</td>';
+          content += '<td><span class="badge" style="background:transparent;border:1px solid '+rankColor(m.rank)+';color:'+rankColor(m.rank)+';">'+esc(m.rank)+'</span></td>';
+          content += '<td class="mono" style="color:var(--text-dim);">'+esc(m.discord||'—')+'</td>';
+          content += '<td><span class="dot" style="background:'+statusColor(m.status)+';margin-right:6px;"></span>'+esc(m.status)+'</td>';
+          content += '<td class="mono" style="color:var(--text-faint);font-size:12px;">'+esc(fmtDate(m.joined))+'</td>';
+          content += '<td style="text-align:right;white-space:nowrap;"><button class="btn btn-ghost btn-sm" onclick=\'grEditMember("'+g.id+'","'+m.id+'")\'>Edit</button><button class="btn btn-ghost btn-sm" style="color:var(--danger);" onclick=\'grDelMember("'+g.id+'","'+m.id+'")\'>Remove</button></td>';
+          content += '</tr>';
+        });
+        content += '</tbody></table></div>';
+      }
+    }
+    cb(shell('registry', g.name, g.turf+' · est. '+g.founded, true, content));
+    restoreFocus('gr-roster-search');
+  });
+}
+
+function renderAdmin(cb){
+  var content = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:28px;">';
+  content += statTile('gr-stat-gangs', String(S.gangs.length), 'Gangs');
+  content += statTile('gr-stat-accounts', '—', 'Accounts');
+  content += statTile('gr-stat-admins', '—', 'Admins');
+  content += statTile('gr-stat-members', '—', 'Total members');
+  content += '</div>';
+
+  content += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">';
+  content += '<div style="font-size:15px;font-weight:700;">Gangs</div><button class="btn btn-accent btn-sm" onclick="grNewGang()">+ Add gang</button></div>';
+  content += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-bottom:32px;">';
+  S.gangs.forEach(function(g){
+    content += '<div class="card" style="border-left:3px solid '+g.color+';padding:14px 16px;">';
+    content += '<div style="font-weight:600;font-size:14px;margin-bottom:2px;">'+esc(g.name)+'</div>';
+    content += '<div class="mono" style="font-size:11px;color:var(--text-faint);margin-bottom:10px;">'+esc(g.tag)+' &middot; '+esc(g.turf)+'</div>';
+    content += '<div style="display:flex;gap:6px;"><button class="btn btn-sm" onclick="grEditGang(\''+g.id+'\')">Edit</button><button class="btn btn-sm btn-danger" onclick="grDeleteGang(\''+g.id+'\')">Delete</button></div></div>';
+  });
+  content += '</div>';
+
+  content += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">';
+  content += '<div style="font-size:15px;font-weight:700;">Accounts</div><button class="btn btn-accent btn-sm" onclick="grNewUser()">+ Create login</button></div>';
+  if (S.notice) content += '<div class="banner banner-success" style="margin-bottom:14px;">'+esc(S.notice)+'</div>';
+  content += '<div id="gr-users-slot" style="color:var(--text-faint);font-size:12.5px;">Loading accounts&hellip;</div>';
+
+  cb(shell('admin', 'Admin panel', 'Manage gangs and accounts', true, content));
+}
+
+function setStat(id, val){ var el = document.getElementById(id); if (el) el.textContent = String(val); }
+
+async function fillUsersTable(){
+  var slot = document.getElementById('gr-users-slot');
+  if (!slot) return;
+  var users = await loadAllProfiles();
+  setStat('gr-stat-accounts', users.length);
+  setStat('gr-stat-admins', users.filter(function(u){ return u.is_admin; }).length);
+  var countRes = await sb.from('roster').select('id', { count: 'exact', head: true });
+  setStat('gr-stat-members', countRes.count == null ? '—' : countRes.count);
+
+  var h = '<div class="card" style="padding:6px 8px;overflow-x:auto;"><table><thead><tr><th style="padding-top:10px;">Username</th><th>Display name</th><th>Gang</th><th>Role</th><th></th></tr></thead><tbody>';
+  users.forEach(function(u){
+    h += '<tr><td class="mono">'+esc(u.username)+'</td><td>'+esc(u.display_name)+'</td><td>';
+    if (u.is_admin) h += '<span style="color:var(--text-faint);">&mdash;</span>';
+    else {
+      h += '<select onchange=\'grReassign("'+u.id+'", this.value)\' style="width:auto;padding:5px 8px;font-size:12px;">';
+      S.gangs.forEach(function(gg){ h += '<option value="'+gg.id+'" '+(u.gang_id===gg.id?'selected':'')+'>'+esc(gg.name)+'</option>'; });
+      h += '</select>';
+    }
+    h += '</td><td>'+(u.is_admin ? '<span class="badge" style="background:var(--accent);color:#fff;">ADMIN</span>' : '<span style="color:var(--text-faint);font-size:12px;">member</span>')+'</td>';
+    h += '<td style="text-align:right;white-space:nowrap;">';
+    h += '<button class="btn btn-ghost btn-sm" onclick=\'grToggleAdmin("'+u.id+'",'+(!u.is_admin)+')\'>'+(u.is_admin?'Revoke admin':'Make admin')+'</button>';
+    h += '<button class="btn btn-ghost btn-sm" style="color:var(--danger);" onclick=\'grRemoveUser("'+u.id+'","'+esc(u.username)+'")\'>Remove</button>';
+    h += '</td></tr>';
+  });
+  h += '</tbody></table></div>';
+  slot.innerHTML = h;
+}
+
+function renderModal(){
+  if (!S.modal) return '';
+  var m = S.modal;
+  var h = '<div class="modal-wrap" onclick="if(event.target===this) grCloseModal()"><div class="modal fade-in">';
+  if (m.type === 'member') {
+    var mem = m.member;
+    h += '<div style="font-size:16px;font-weight:700;margin-bottom:16px;">'+(m.isNew?'Add member':'Edit member')+'</div>';
+    h += '<form onsubmit="grSaveMember(event); return false;">';
+    h += '<div class="field"><span class="field-label">Name</span><input id="gr-mf-name" value="'+esc(mem.name)+'" placeholder="Full name" autofocus /></div>';
+    h += '<div class="field"><span class="field-label">Alias / callsign</span><input id="gr-mf-alias" value="'+esc(mem.alias)+'" placeholder="Optional street name" /></div>';
+    h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">';
+    h += '<div class="field"><span class="field-label">Rank</span><select id="gr-mf-rank">'+RANKS.map(function(r){ return '<option '+(mem.rank===r?'selected':'')+'>'+r+'</option>'; }).join('')+'</select></div>';
+    h += '<div class="field"><span class="field-label">Status</span><select id="gr-mf-status">'+STATUSES.map(function(r){ return '<option '+(mem.status===r?'selected':'')+'>'+r+'</option>'; }).join('')+'</select></div>';
+    h += '</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">';
+    h += '<div class="field"><span class="field-label">Discord</span><input id="gr-mf-discord" value="'+esc(mem.discord)+'" placeholder="e.g. red_talon_jay" /></div>';
+    h += '<div class="field"><span class="field-label">Joined</span><input id="gr-mf-joined" type="date" value="'+esc(mem.joined)+'" /></div></div>';
+    h += '<div class="field"><span class="field-label">Notes</span><textarea id="gr-mf-notes" rows="3" placeholder="Optional">'+esc(mem.notes)+'</textarea></div>';
+    if (S.error) h += '<div style="color:var(--danger);font-size:12.5px;margin-bottom:10px;">'+esc(S.error)+'</div>';
+    h += '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px;"><button type="button" class="btn" onclick="grCloseModal()">Cancel</button><button type="submit" class="btn btn-accent">Save</button></div>';
+    h += '</form>';
+  }
+  if (m.type === 'gang') {
+    var g = m.gang;
+    h += '<div style="font-size:16px;font-weight:700;margin-bottom:16px;">'+(m.isNew?'Add gang':'Edit gang')+'</div>';
+    h += '<form onsubmit="grSaveGang(event); return false;">';
+    h += '<div class="field"><span class="field-label">Name</span><input id="gr-gf-name" value="'+esc(g.name)+'" autofocus /></div>';
+    h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">';
+    h += '<div class="field"><span class="field-label">Tag</span><input id="gr-gf-tag" value="'+esc(g.tag)+'" maxlength="6" /></div>';
+    h += '<div class="field"><span class="field-label">Color</span><input id="gr-gf-color" type="color" value="'+esc(g.color)+'" style="padding:4px;height:38px;" /></div></div>';
+    h += '<div class="field"><span class="field-label">Turf</span><input id="gr-gf-turf" value="'+esc(g.turf)+'" /></div>';
+    h += '<div class="field"><span class="field-label">Founded (year)</span><input id="gr-gf-founded" value="'+esc(g.founded)+'" /></div>';
+    h += '<div class="field"><span class="field-label">Motto</span><input id="gr-gf-motto" value="'+esc(g.motto)+'" /></div>';
+    if (S.error) h += '<div style="color:var(--danger);font-size:12.5px;margin-bottom:10px;">'+esc(S.error)+'</div>';
+    h += '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px;"><button type="button" class="btn" onclick="grCloseModal()">Cancel</button><button type="submit" class="btn btn-accent">Save</button></div>';
+    h += '</form>';
+  }
+  if (m.type === 'createUser') {
+    h += '<div style="font-size:16px;font-weight:700;margin-bottom:16px;">Create login</div>';
+    h += '<form onsubmit="grSubmitCreateUser(event); return false;">';
+    h += '<div class="field"><span class="field-label">Display name</span><input id="gr-cu-dname" value="'+esc(m.displayName)+'" autofocus /></div>';
+    h += '<div class="field"><span class="field-label">Username</span><input id="gr-cu-user" value="'+esc(m.username)+'" /></div>';
+    h += '<div class="field"><span class="field-label">Password</span><input id="gr-cu-pass" value="'+esc(m.password)+'" placeholder="min 6 characters" /></div>';
+    h += '<div class="field"><span class="field-label">Gang</span><select id="gr-cu-gang" '+(m.isAdmin?'disabled':'')+'>'+S.gangs.map(function(gg){ return '<option value="'+gg.id+'" '+(m.gangId===gg.id?'selected':'')+'>'+esc(gg.name)+'</option>'; }).join('')+'</select></div>';
+    h += '<label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:10px;"><input type="checkbox" id="gr-cu-admin" style="width:auto;" '+(m.isAdmin?'checked':'')+' onchange="grToggleAdminField(this.checked)" /> Grant admin access</label>';
+    if (S.error) h += '<div style="color:var(--danger);font-size:12.5px;margin-bottom:10px;">'+esc(S.error)+'</div>';
+    h += '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px;"><button type="button" class="btn" onclick="grCloseModal()">Cancel</button><button type="submit" class="btn btn-accent">Create account</button></div>';
+    h += '</form>';
+  }
+  if (m.type === 'changePassword') {
+    h += '<div style="font-size:16px;font-weight:700;margin-bottom:16px;">Change password</div>';
+    h += '<form onsubmit="grSubmitChangePw(event); return false;">';
+    h += '<div class="field"><span class="field-label">New password</span><input id="gr-cp-new" type="password" placeholder="min 6 characters" autofocus /></div>';
+    if (S.error) h += '<div style="color:var(--danger);font-size:12.5px;margin-bottom:10px;">'+esc(S.error)+'</div>';
+    h += '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px;"><button type="button" class="btn" onclick="grCloseModal()">Cancel</button><button type="submit" class="btn btn-accent">Update password</button></div>';
+    h += '</form>';
+  }
+  h += '</div></div>';
+  return h;
+}
+
+function restoreFocus(id){
+  var el = document.getElementById(id);
+  if (el && S._focusId === id) {
+    el.focus();
+    if (typeof S._focusPos === 'number') el.setSelectionRange(S._focusPos, S._focusPos);
+  }
+}
+
+function render(){
+  if (!S.booted) { root.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;min-height:100vh;color:var(--text-faint);">Loading&hellip;</div>'; return; }
+  if (S.view === 'setup') { root.innerHTML = renderSetup(); return; }
+  if (S.view === 'auth') { root.innerHTML = renderAuth(); return; }
+  if (S.view === 'registry') { root.innerHTML = renderRegistry() + renderModal(); restoreFocus('gr-gang-search'); return; }
+  if (S.view === 'gang') { renderGang(function(h){ root.innerHTML = h + renderModal(); }); return; }
+  if (S.view === 'admin') { renderAdmin(function(h){ root.innerHTML = h + renderModal(); setTimeout(fillUsersTable, 0); }); return; }
+}
+
+function setBusy(e, label){
+  var btn = e && e.target && e.target.querySelector ? e.target.querySelector('button[type=submit]') : null;
+  if (btn) { btn.disabled = true; btn.textContent = label; }
+}
+
+window.grSetTab = function(t){ S.authTab = t; S.error=''; render(); focusFirstField(); };
+window.grDoLogin = function(e){
+  setBusy(e, 'Signing in…');
+  doLogin(document.getElementById('gr-li-user').value, document.getElementById('gr-li-pass').value);
+};
+window.grDoRegister = function(e){
+  setBusy(e, 'Creating account…');
+  doRegister(document.getElementById('gr-re-user').value, document.getElementById('gr-re-pass').value, document.getElementById('gr-re-dname').value, document.getElementById('gr-re-gang').value);
+};
+window.grLogout = function(){ doLogout(); };
+window.grBack = function(){ backToRegistry(); };
+window.grAdmin = function(){ goAdmin(); };
+window.grOpenGang = function(id){ openGang(id); };
+window.grFilterGangs = function(v){
+  var el = document.getElementById('gr-gang-search');
+  S._focusId = 'gr-gang-search';
+  S._focusPos = el ? el.selectionStart : null;
+  S.gangQuery = v;
+  render();
+};
+window.grFilterGangsClear = function(){ S.gangQuery = ''; render(); };
+window.grFilterRoster = function(v){
+  var el = document.getElementById('gr-roster-search');
+  S._focusId = 'gr-roster-search';
+  S._focusPos = el ? el.selectionStart : null;
+  S.rosterQuery = v;
+  render();
+};
+window.grFilterRosterClear = function(){ S.rosterQuery = ''; render(); };
+window.grAddMember = function(gid){ openMemberModal(gid, null); };
+window.grEditMember = function(gid, mid){
+  loadRoster(gid).then(function(roster){
+    var m = roster.find(function(x){ return String(x.id)===String(mid); });
+    openMemberModal(gid, m);
+  });
+};
+window.grDelMember = function(gid, mid){ deleteMember(gid, mid); };
+window.grSaveMember = function(e){
+  var m = S.modal.member;
+  m.name = document.getElementById('gr-mf-name').value.trim();
+  m.alias = document.getElementById('gr-mf-alias').value.trim();
+  m.rank = document.getElementById('gr-mf-rank').value;
+  m.status = document.getElementById('gr-mf-status').value;
+  m.discord = document.getElementById('gr-mf-discord').value.trim();
+  m.joined = document.getElementById('gr-mf-joined').value;
+  m.notes = document.getElementById('gr-mf-notes').value.trim();
+  setBusy(e, 'Saving…');
+  saveMemberModal();
+};
+window.grCloseModal = function(){ closeModal(); };
+window.grEditGang = function(id){ openGangEditModal(findGang(id)); };
+window.grNewGang = function(){ openGangEditModal(null); };
+window.grSaveGang = function(e){
+  var g = S.modal.gang;
+  g.name = document.getElementById('gr-gf-name').value.trim();
+  g.tag = document.getElementById('gr-gf-tag').value.trim().toUpperCase();
+  g.color = document.getElementById('gr-gf-color').value;
+  g.turf = document.getElementById('gr-gf-turf').value.trim();
+  g.founded = document.getElementById('gr-gf-founded').value.trim();
+  g.motto = document.getElementById('gr-gf-motto').value.trim();
+  setBusy(e, 'Saving…');
+  saveGangModal();
+};
+window.grDeleteGang = function(id){ deleteGang(id); };
+window.grNewUser = function(){ openCreateUserModal(); };
+window.grToggleAdminField = function(v){ S.modal.isAdmin = v; render(); };
+window.grSubmitCreateUser = function(e){
+  S.modal.username = document.getElementById('gr-cu-user').value;
+  S.modal.password = document.getElementById('gr-cu-pass').value;
+  S.modal.displayName = document.getElementById('gr-cu-dname').value;
+  S.modal.gangId = document.getElementById('gr-cu-gang') ? document.getElementById('gr-cu-gang').value : S.modal.gangId;
+  setBusy(e, 'Creating…');
+  submitCreateUser();
+};
+window.grReassign = function(id, gid){ reassignUserGang(id, gid); };
+window.grToggleAdmin = function(id, v){ toggleAdmin(id, v); };
+window.grRemoveUser = function(id, uname){ removeFromRegistry(id, uname); };
+window.grChangePw = function(){ openChangePasswordModal(); };
+window.grSubmitChangePw = function(e){
+  S.modal.next = document.getElementById('gr-cp-new').value;
+  setBusy(e, 'Updating…');
+  submitChangePassword();
+};
+
+document.addEventListener('keydown', function(e){
+  if (e.key === 'Escape' && S.modal) { closeModal(); }
+});
+
+boot();
+})();
+</script>
+</body>
+</html>
